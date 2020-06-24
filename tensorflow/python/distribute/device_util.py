@@ -84,6 +84,8 @@ def resolve(d):
 class _FakeNodeDef(object):
   """A fake NodeDef for _FakeOperation."""
 
+  __slots__ = ["op", "name"]
+
   def __init__(self):
     self.op = ""
     self.name = ""
@@ -91,6 +93,8 @@ class _FakeNodeDef(object):
 
 class _FakeOperation(object):
   """A fake Operation object to pass to device functions."""
+
+  __slots__ = ["device", "type", "name", "node_def"]
 
   def __init__(self):
     self.device = ""
