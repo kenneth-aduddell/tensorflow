@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
+import operator
 import six
 
 from tensorflow.core.framework import tensor_shape_pb2
@@ -795,9 +797,9 @@ class TensorShape(object):
 
   def __repr__(self):
     if self._v2_behavior:
-      if self._dims is not None:
+      try:
         return "TensorShape(%r)" % [dim.value for dim in self._dims]
-      else:
+      except TypeError:
         return "TensorShape(None)"
     else:
       return "TensorShape(%r)" % self._dims
@@ -819,9 +821,10 @@ class TensorShape(object):
   @property
   def rank(self):
     """Returns the rank of this shape, or None if it is unspecified."""
-    if self._dims is not None:
+    try:
       return len(self._dims)
-    return None
+    except TypeError:
+      return None
 
   @property
   def dims(self):
@@ -842,9 +845,10 @@ class TensorShape(object):
 
   def __len__(self):
     """Returns the rank of this shape, or raises ValueError if unspecified."""
-    if self._dims is None:
+    try:
+      return len(self._dims)
+    except TypeError:
       raise ValueError("Cannot take the length of shape with unknown rank.")
-    return len(self._dims)
 
   def __bool__(self):
     """Returns True if this shape contains non-zero information."""
@@ -855,13 +859,13 @@ class TensorShape(object):
 
   def __iter__(self):
     """Returns `self.dims` if the rank is known, otherwise raises ValueError."""
-    if self._dims is None:
-      raise ValueError("Cannot iterate over a shape with unknown rank.")
-    else:
+    try:
       if self._v2_behavior:
         return iter(d.value for d in self._dims)
       else:
         return iter(d for d in self._dims)
+    except TypeError:
+      raise ValueError("Cannot iterate over a shape with unknown rank.")
 
   def __getitem__(self, key):
     """Returns the value of a dimension or a shape, depending on the key.
@@ -879,7 +883,7 @@ class TensorShape(object):
       ValueError: If `key` is a slice and `self` is completely unknown and
         the step is set.
     """
-    if self._dims is not None:
+    try:
       if isinstance(key, slice):
         return TensorShape(self._dims[key])
       else:
@@ -887,7 +891,7 @@ class TensorShape(object):
           return self._dims[key].value
         else:
           return self._dims[key]
-    else:
+    except TypeError:
       if isinstance(key, slice):
         start = key.start if key.start is not None else 0
         stop = key.stop
@@ -915,12 +919,9 @@ class TensorShape(object):
 
   def num_elements(self):
     """Returns the total number of elements, or none for incomplete shapes."""
-    if self.is_fully_defined():
-      size = 1
-      for dim in self._dims:
-        size *= dim.value
-      return size
-    else:
+    try:
+      return functools.reduce(operator.mul, self.as_list(), 1)
+    except TypeError:
       return None
 
   def merge_with(self, other):
@@ -942,19 +943,18 @@ class TensorShape(object):
     other = as_shape(other)
     if self._dims is None:
       return other
+    if other.dims is None:
+      return self
     else:
       try:
         self.assert_same_rank(other)
-        new_dims = []
-        for i, dim in enumerate(self._dims):
-          new_dims.append(dim.merge_with(other[i]))
+        new_dims = [dim.merge_with(other_dim)
+                    for dim, other_dim in zip(self._dims, other.dims)]
         return TensorShape(new_dims)
       except ValueError:
         raise ValueError("Shapes %s and %s are not compatible" % (self, other))
 
   def __add__(self, other):
-    if not isinstance(other, TensorShape):
-      other = TensorShape(other)
     return self.concatenate(other)
 
   def __radd__(self, other):
@@ -980,10 +980,10 @@ class TensorShape(object):
     # TODO(mrry): Handle the case where we concatenate a known shape with a
     # completely unknown shape, so that we can use the partial information.
     other = as_shape(other)
-    if self._dims is None or other.dims is None:
-      return unknown_shape()
-    else:
+    try:
       return TensorShape(self._dims + other.dims)
+    except TypeError:
+      return unknown_shape()
 
   def assert_same_rank(self, other):
     """Raises an exception if `self` and `other` do not have compatible ranks.
@@ -1157,10 +1157,8 @@ class TensorShape(object):
     if self._dims is None or other.dims is None or self.rank != other.rank:
       return unknown_shape()
 
-    dims = [(Dimension(None))] * self.rank
-    for i, (d1, d2) in enumerate(zip(self._dims, other.dims)):
-      if d1 is not None and d2 is not None and d1 == d2:
-        dims[i] = d1
+    dims = [d1 if d1 is not None and d2 is not None and d1 == d2 else None
+            for d1, d2 in zip(self._dims, other.dims)]
     return TensorShape(dims)
 
   def is_fully_defined(self):
@@ -1186,9 +1184,10 @@ class TensorShape(object):
     Raises:
       ValueError: If `self` is an unknown shape with an unknown rank.
     """
-    if self._dims is None:
+    try:
+      return [dim.value for dim in self._dims]
+    except TypeError:
       raise ValueError("as_list() is not defined on an unknown TensorShape.")
-    return [dim.value for dim in self._dims]
 
   def as_proto(self):
     """Returns this shape as a `TensorShapeProto`."""
