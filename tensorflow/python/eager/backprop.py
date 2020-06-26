@@ -106,8 +106,6 @@ def make_attr(attr_type, value):
 class _MockOp(object):
   """Pretends to be a tf.Operation for the gradient functions."""
 
-  __slots__ = ["attrs", "inputs", "outputs", "type", "skip_input_indices"]
-
   def __init__(self, attrs, inputs, outputs, typ, skip_input_indices):
     self.attrs = attrs
     self.inputs = inputs

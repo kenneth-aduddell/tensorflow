@@ -210,8 +210,6 @@ ContextSwitch = collections.namedtuple(
 class _ContextSwitchStack(threading.local):
   """A thread-local stack of context switches."""
 
-  __slots__ = ["stack"]
-
   def __init__(self, eager):
     super(_ContextSwitchStack, self).__init__()
     self.stack = []

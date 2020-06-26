@@ -94,8 +94,6 @@ class _FakeNodeDef(object):
 class _FakeOperation(object):
   """A fake Operation object to pass to device functions."""
 
-  __slots__ = ["device", "type", "name", "node_def"]
-
   def __init__(self):
     self.device = ""
     self.type = ""

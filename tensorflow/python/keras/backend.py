@@ -720,8 +720,6 @@ def get_default_graph_uid_map():
 class _TfDeviceCaptureOp(object):
   """Class for capturing the TF device scope."""
 
-  __slots__ = ["device"]
-
   def __init__(self):
     self.device = None
 

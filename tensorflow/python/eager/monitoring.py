@@ -104,7 +104,7 @@ _sampler_methods = [
 class Metric(object):
   """The base class of metric."""
 
-  __slots__ = ["_metric_name", "_metric_methods", "_label_length"]
+  __slots__ = ["_metric", "_metric_name", "_metric_methods", "_label_length"]
 
   def __init__(self, metric_name, metric_methods, label_length, *args):
     """Creates a new metric.
@@ -393,7 +393,7 @@ class SamplerCell(object):
 class Buckets(object):
   """Bucketing strategies for the samplers."""
 
-  __slots__ = ["_cell"]
+  __slots__ = ["buckets"]
 
   def __init__(self, buckets):
     """Creates a new Buckets.
